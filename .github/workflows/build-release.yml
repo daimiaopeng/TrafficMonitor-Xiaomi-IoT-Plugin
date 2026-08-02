@@ -1,0 +1,73 @@
+name: Build and Release TrafficMonitor Plugin
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build x64 Windows plugin
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build DLL
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VS_PATH=%%i"
+          if not defined VS_PATH exit /b 1
+          call "%VS_PATH%\Common7\Tools\VsDevCmd.bat" -arch=x64
+          cl /utf-8 /std:c++20 /EHsc /LD XiaomiIoTPlugin.cpp /I. /FeXiaomiIoTPlugin.dll /link onecore.lib wininet.lib
+          if errorlevel 1 exit /b 1
+
+      - name: Package release files
+        shell: pwsh
+        run: |
+          $packageRoot = Join-Path $env:GITHUB_WORKSPACE 'release\TrafficMonitor-Xiaomi-IoT-Plugin'
+          New-Item -ItemType Directory -Force -Path $packageRoot | Out-Null
+          Copy-Item 'XiaomiIoTPlugin.dll' $packageRoot
+          Copy-Item 'PluginInterface.h' $packageRoot
+          Copy-Item 'build.bat' $packageRoot
+          Copy-Item 'README.md' $packageRoot
+          if (Test-Path 'LICENSE') { Copy-Item 'LICENSE' $packageRoot }
+          $zipPath = Join-Path $env:GITHUB_WORKSPACE "release\TrafficMonitor-Xiaomi-IoT-Plugin-$env:GITHUB_REF_NAME.zip"
+          Compress-Archive -Path $packageRoot -DestinationPath $zipPath -Force
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrafficMonitor-Xiaomi-IoT-Plugin
+          path: release/*
+          if-no-files-found: error
+
+  release:
+    name: Create GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download packaged artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: TrafficMonitor-Xiaomi-IoT-Plugin
+          path: release
+
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $zip = Get-ChildItem -Path release -Filter '*.zip' -Recurse | Select-Object -First 1
+          if (-not $zip) { throw 'Release zip was not found.' }
+          gh release create $env:GITHUB_REF_NAME $zip.FullName --title "TrafficMonitor Xiaomi IoT Plugin $env:GITHUB_REF_NAME" --generate-notes

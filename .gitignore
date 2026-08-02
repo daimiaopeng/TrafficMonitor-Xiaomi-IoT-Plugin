@@ -1,0 +1,24 @@
+# Native build outputs
+*.dll
+*.exe
+*.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
+
+# Visual Studio and local editor files
+.vs/
+*.vcxproj.user
+*.suo
+
+# Local runtime configuration and history
+XiaomiIoTPlugin.ini
+XiaomiIoTPlugin_power_history.csv
+*.log
+
+# Exported configuration can contain device tokens
+*.json
+
+# Local development tokens
+.env
