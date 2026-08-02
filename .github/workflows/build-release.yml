@@ -70,4 +70,4 @@ jobs:
         run: |
           $zip = Get-ChildItem -Path release -Filter '*.zip' -Recurse | Select-Object -First 1
           if (-not $zip) { throw 'Release zip was not found.' }
-          gh release create $env:GITHUB_REF_NAME $zip.FullName --title "TrafficMonitor Xiaomi IoT Plugin $env:GITHUB_REF_NAME" --generate-notes
+          gh release create $env:GITHUB_REF_NAME $zip.FullName --repo $env:GITHUB_REPOSITORY --title "TrafficMonitor Xiaomi IoT Plugin $env:GITHUB_REF_NAME" --generate-notes

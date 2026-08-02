@@ -29,22 +29,23 @@ if exist XiaomiIoTPlugin.dll (
     echo ============================================================
 
     echo [Deploy] Copying to TrafficMonitor plugins directory...
-    if not exist "C:\Users\daimi\Documents\TrafficMonitor\plugins" (
-        mkdir "C:\Users\daimi\Documents\TrafficMonitor\plugins"
+    set "TM_PLUGIN_DIR=%USERPROFILE%\Documents\TrafficMonitor\plugins"
+    if not exist "%TM_PLUGIN_DIR%" (
+        mkdir "%TM_PLUGIN_DIR%"
     )
-    copy /Y XiaomiIoTPlugin.dll "C:\Users\daimi\Documents\TrafficMonitor\plugins\XiaomiIoTPlugin.dll"
+    copy /Y XiaomiIoTPlugin.dll "%TM_PLUGIN_DIR%\XiaomiIoTPlugin.dll"
     if errorlevel 1 (
         echo [Deploy] FAILED! The destination DLL may be locked by TrafficMonitor.
         exit /b 1
     )
 
     if exist ".env" (
-        copy /Y ".env" "C:\Users\daimi\Documents\TrafficMonitor\plugins\.env" >nul
+        copy /Y ".env" "%TM_PLUGIN_DIR%\.env" >nul
         echo [Deploy] Local .env copied to the plugin configuration directory.
     )
 
     echo ============================================================
-    echo [Deploy] Deployed to C:\Users\daimi\Documents\TrafficMonitor\plugins\XiaomiIoTPlugin.dll
+    echo [Deploy] Deployed to the TrafficMonitor plugins directory.
     echo ============================================================
 ) else (
     echo [Build] FAILED! Check compiler output above.
